@@ -157,21 +157,21 @@ impl<'a> Twine<'a> {
         }
     }
 
-    pub fn print_to(&self, s: &mut String) {
-        match self.0 {
+    pub fn print_to<W: std::fmt::Write>(&self, w: &mut W) -> std::fmt::Result {
+        Ok(match self.0 {
             TwineKind::Null => {},
             TwineKind::Empty => {},
-            TwineKind::Unary(child) => child.print_to(s),
+            TwineKind::Unary(child) => child.print_to(w)?,
             TwineKind::Binary(l_child, r_child) => {
-                l_child.print_to(s);
-                r_child.print_to(s);
+                l_child.print_to(w)?;
+                r_child.print_to(w)?;
             }
-        }
+        })
     }
 
     pub fn to_string(&self) -> String {
         let mut s = String::with_capacity(self.min_len());
-        self.print_to(&mut s);
+        self.print_to(&mut s).expect("could not format into String");
         s
     }
 
@@ -209,18 +209,18 @@ impl<'a> TwineChild<'a> {
         }
     }
 
-    fn print_to(&self, s: &mut String) {
+    fn print_to<W: std::fmt::Write>(&self, w: &mut W) -> std::fmt::Result {
         match self {
-            TwineChild::Twine(t) => t.print_to(s),
-            TwineChild::Str(string) => s.push_str(*string),
-            TwineChild::Char(ch) => s.push(**ch),
-            TwineChild::DecU64(x) => s.push_str(&x.to_string()),
-            TwineChild::DecU32(x) => s.push_str(&x.to_string()),
-            TwineChild::DecU16(x) => s.push_str(&x.to_string()),
-            TwineChild::DecI64(x) => s.push_str(&x.to_string()),
-            TwineChild::DecI32(x) => s.push_str(&x.to_string()),
-            TwineChild::DecI16(x) => s.push_str(&x.to_string()),
-            TwineChild::HexU64(x) => s.push_str(&format!("{:x}", x)),
+            TwineChild::Twine(t) => t.print_to(w),
+            TwineChild::Str(string) => w.write_str(*string),
+            TwineChild::Char(ch) => w.write_char(**ch),
+            TwineChild::DecU64(x) => write!(w, "{}", x),
+            TwineChild::DecU32(x) => write!(w, "{}", x),
+            TwineChild::DecU16(x) => write!(w, "{}", x),
+            TwineChild::DecI64(x) => write!(w, "{}", x),
+            TwineChild::DecI32(x) => write!(w, "{}", x),
+            TwineChild::DecI16(x) => write!(w, "{}", x),
+            TwineChild::HexU64(x) => write!(w, "{:x}", x),
         }
     }
 }

@@ -19,4 +19,6 @@ fn main() {
     let hex = &Twine::new_hex(&55);
     let h = t.concat(hex);
     println!("{:?}", h.to_string());
+    let h2 = h.concat(&h);
+    println!("{:?}", h2.to_string());
 }

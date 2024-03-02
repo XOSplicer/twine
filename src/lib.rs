@@ -177,6 +177,14 @@ impl<'a> Twine<'a> {
 
 }
 
+impl<'a> std::ops::Add<&'a Twine<'a>> for &'a Twine<'a> {
+    type Output = Twine<'a>;
+
+    fn add(self, rhs: &'a Twine<'a>) -> Self::Output {
+        Twine::new_concat(self, rhs)
+    }
+}
+
 impl<'a> TwineChild<'a> {
     fn is_empty(&self) -> bool {
         match self {

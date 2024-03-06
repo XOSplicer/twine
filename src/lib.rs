@@ -261,7 +261,7 @@ impl<'a> Twine<'a> {
 
     /// Render the Twine as a string in the buffer of the writer.
     pub fn write_to<W: std::fmt::Write>(&self, w: &mut W) -> std::fmt::Result {
-        Ok(match self.0 {
+        match self.0 {
             TwineKind::Null => {}
             TwineKind::Empty => {}
             TwineKind::Unary(child) => child.write_to(w)?,
@@ -269,11 +269,12 @@ impl<'a> Twine<'a> {
                 l_child.write_to(w)?;
                 r_child.write_to(w)?;
             }
-        })
+        };
+        Ok(())
     }
 
     /// Render the Twine as a String.
-    pub fn to_string(&self) -> String {
+    pub fn write_to_string(&self) -> String {
         let mut s = String::with_capacity(self.estimated_capacity().next_power_of_two());
         // dbg!(s.capacity());
         self.write_to(&mut s).expect("could not format into String");
@@ -316,7 +317,7 @@ impl<'a> TwineChild<'a> {
     fn write_to<W: std::fmt::Write>(&self, w: &mut W) -> std::fmt::Result {
         match self {
             TwineChild::Twine(t) => t.write_to(w),
-            TwineChild::Str(string) => w.write_str(*string),
+            TwineChild::Str(string) => w.write_str(string),
             TwineChild::Char(ch) => w.write_char(**ch),
             TwineChild::DecU64(x) => write!(w, "{}", x),
             TwineChild::DecU32(x) => write!(w, "{}", x),

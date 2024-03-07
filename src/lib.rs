@@ -31,6 +31,8 @@
 #[cfg(feature = "std")]
 extern crate std;
 
+// TODO: add #[inline(always)]
+
 
 /// The Twine lightweight data structure for efficiently representing the concatenation
 /// of temporary values as strings.

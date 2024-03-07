@@ -1,31 +1,39 @@
+//! # Twine
+//!
+//! A lightweight data structure for efficiently representing the concatenation
+//! of temporary values as strings.
+//!
+//! Use the various `From::from` implementations to crate a new value.
+//!
+//! Use `Twine::concat` to concatinate multiple Twines.
+//!
+//! Similar to LLVM's llvm::Twine.
+//!
+//! A Twine is a lightweight string structure.
+//! It represents a concatenated string using a binary-tree.
+//! The Twine can be rendered into a string or a buffer when the result of a concatination is used.
+//! If the result is never used, the cost of intermediate strings is avoided.
+//! The Twine also tracks the type of concatinated primitive values that are not strings.
+//! This allows further reduction of temporary strings for theses types.
+//! Therefore appending an integer to a string is very cheap.
+//!
+//! Twines have a special `null` values, which always yields a `null` value on concatination
+//! and is rendered an an empty string.
+//!
+//! ## Features
+//!
+//! - `std`: enable support for `std::String`. Use `Twine::to_string_preallocating()` to render into a String.
+//!
+
+
 #![no_std]
 
 #[cfg(feature = "std")]
 extern crate std;
 
-/// A lightweight data structure for efficiently representing the concatenation
+
+/// The Twine lightweight data structure for efficiently representing the concatenation
 /// of temporary values as strings.
-///
-/// Use the various `From::from` implementations to crate a new value.
-///
-/// Use `Twine::concat` to concatinate multiple Twines.
-///
-/// Similar to LLVM's llvm::Twine.
-///
-/// A Twine is a lightweight rope string structure.
-/// It represents a concatenated string using a binary-tree.
-/// Since the Twine can be efficiently rendered into a writer to a buffer
-///  when its result is used, it avoids the cost of generating temporary values
-/// for intermediate string results –
-/// particularly in cases when the Twine result is never required.
-/// By explicitly tracking the type of leaf nodes,
-/// we can also avoid the creation of temporary strings for conversions operations
-/// (such as appending an integer to a string).
-///
-/// Twines support a special 'null' value, which always concatenates to form itself,
-/// and renders as an empty string.
-/// This can be returned from APIs to effectively nullify any concatenations
-/// performed on the result.
 #[derive(Debug, Clone, Copy)]
 pub struct Twine<'a>(TwineKind<'a>);
 

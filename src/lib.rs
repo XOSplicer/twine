@@ -479,28 +479,16 @@ mod test {
     use super::*;
 
     #[test]
-    fn main_test() {
-        println!("sizeof(Twine)={}", std::mem::size_of::<Twine<'static>>());
-        println!("sizeof(usize)={}", std::mem::size_of::<usize>());
-        println!("sizeof(&str)={}", std::mem::size_of::<&str>());
-        let bar = Twine::from("bar");
-        println!("{:?}", &bar);
-        let s = Twine::from(" ");
-        println!("{:?}", &s);
-        let foo = Twine::from("foo");
-        println!("{:?}", &foo);
-        let r = foo.concat(&s);
-        println!("{:?}", &r);
-        let t = r.concat(&bar);
-        println!("{:?}", &t);
-        let string = t.to_string();
-        println!("{:?}", &string);
-        let hex = &Twine::hex(&55);
-        let h = t.concat(hex);
-        println!("{:?}", h.to_string());
-        let h2 = h.concat(&h);
-        println!("{:?}", h2.to_string());
+    fn size_of() {
+        let size_of_usize = std::mem::size_of::<usize>();
+        let size_of_twine = std::mem::size_of::<Twine<'static>>();
+        let size_of_str = std::mem::size_of::<&str>();
+        assert_eq!(size_of_twine, 6 * size_of_usize);
+        assert_eq!(size_of_twine, 3 * &size_of_str);
+    }
 
+    #[test]
+    fn string_in_bumpalo() {
         let bump = bumpalo::Bump::new();
         dbg!(bump.allocated_bytes());
         let base = bump.alloc_str("bumpalloc-");
@@ -516,8 +504,8 @@ mod test {
         dbg!(bump.allocated_bytes());
         let _ = t1.write_to(&mut s1);
         dbg!(bump.allocated_bytes());
-        println!("{:?}", &s1);
-        dbg!(s1.capacity());
+        assert_eq!(s1, "bumpalloc-1");
+        assert!(s1.capacity() >= 11);
         dbg!(bump.allocated_bytes());
     }
 }

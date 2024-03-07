@@ -25,14 +25,12 @@
 //! - `std`: enable support for `std::String`. Use `Twine::to_string_preallocating()` to render into a String.
 //!
 
-
 #![no_std]
 
 #[cfg(feature = "std")]
 extern crate std;
 
 // TODO: add #[inline(always)]
-
 
 /// The Twine lightweight data structure for efficiently representing the concatenation
 /// of temporary values as strings.
@@ -67,6 +65,7 @@ enum TwineChild<'a> {
 }
 
 impl<'a> From<&'a str> for Twine<'a> {
+    #[inline(always)]
     fn from(t: &'a str) -> Twine<'a> {
         if t.is_empty() {
             Twine::empty()
@@ -78,60 +77,70 @@ impl<'a> From<&'a str> for Twine<'a> {
 
 #[cfg(feature = "std")]
 impl<'a> From<&'a std::string::String> for Twine<'a> {
+    #[inline(always)]
     fn from(t: &'a std::string::String) -> Twine<'a> {
         Twine::from(t.as_str())
     }
 }
 
 impl<'a> From<&'a char> for Twine<'a> {
+    #[inline(always)]
     fn from(t: &'a char) -> Twine<'a> {
         Twine(TwineKind::Unary(TwineChild::Char(t)))
     }
 }
 
 impl<'a> From<&'a u64> for Twine<'a> {
+    #[inline(always)]
     fn from(t: &'a u64) -> Twine<'a> {
         Twine(TwineKind::Unary(TwineChild::DecU64(t)))
     }
 }
 
 impl<'a> From<&'a u32> for Twine<'a> {
+    #[inline(always)]
     fn from(t: &'a u32) -> Twine<'a> {
         Twine(TwineKind::Unary(TwineChild::DecU32(t)))
     }
 }
 
 impl<'a> From<&'a u16> for Twine<'a> {
+    #[inline(always)]
     fn from(t: &'a u16) -> Twine<'a> {
         Twine(TwineKind::Unary(TwineChild::DecU16(t)))
     }
 }
 
 impl<'a> From<&'a i64> for Twine<'a> {
+    #[inline(always)]
     fn from(t: &'a i64) -> Twine<'a> {
         Twine(TwineKind::Unary(TwineChild::DecI64(t)))
     }
 }
 
 impl<'a> From<&'a i32> for Twine<'a> {
+    #[inline(always)]
     fn from(t: &'a i32) -> Twine<'a> {
         Twine(TwineKind::Unary(TwineChild::DecI32(t)))
     }
 }
 
 impl<'a> From<&'a i16> for Twine<'a> {
+    #[inline(always)]
     fn from(t: &'a i16) -> Twine<'a> {
         Twine(TwineKind::Unary(TwineChild::DecI16(t)))
     }
 }
 
 impl<'a> From<&'a core::fmt::Arguments<'a>> for Twine<'a> {
+    #[inline(always)]
     fn from(t: &'a core::fmt::Arguments<'a>) -> Twine<'a> {
         Twine(TwineKind::Unary(TwineChild::FmtArgs(t)))
     }
 }
 
 impl<'a> From<(&'a str, &'a str)> for Twine<'a> {
+    #[inline(always)]
     fn from((lhs, rhs): (&'a str, &'a str)) -> Twine<'a> {
         match (lhs.is_empty(), rhs.is_empty()) {
             (true, true) => Twine::empty(),
@@ -159,6 +168,7 @@ impl<'a> Twine<'a> {
     /// assert!(c.is_null());
     /// assert_eq!(c.to_string(), "");
     /// ```
+    #[inline(always)]
     pub fn null() -> Twine<'a> {
         Twine(TwineKind::Null)
     }
@@ -171,6 +181,7 @@ impl<'a> Twine<'a> {
     /// let a = &Twine::empty();
     /// assert_eq!(a.to_string(), "");
     /// ```
+    #[inline(always)]
     pub fn empty() -> Twine<'a> {
         Twine(TwineKind::Empty)
     }
@@ -183,11 +194,13 @@ impl<'a> Twine<'a> {
     /// let a = &Twine::hex(&0x42);
     /// assert_eq!(a.to_string(), "42");
     /// ```
+    #[inline(always)]
     pub fn hex(t: &'a u64) -> Twine<'a> {
         Twine(TwineKind::Unary(TwineChild::HexU64(t)))
     }
 
     /// Flatten a nested unary Twine
+    #[inline(always)]
     fn flatten(&'a self) -> &'a Twine<'a> {
         match self.0 {
             // TODO: better flattening by moving flatten to TwineChild
@@ -197,6 +210,7 @@ impl<'a> Twine<'a> {
     }
 
     /// Create a new Twine by concatinating two Twines.
+    #[inline(always)]
     pub fn new_concat(lhs: &'a Twine<'a>, rhs: &'a Twine<'a>) -> Twine<'a> {
         match (lhs.flatten().0, rhs.flatten().0) {
             (TwineKind::Null, _) => Twine(TwineKind::Null),
@@ -227,6 +241,7 @@ impl<'a> Twine<'a> {
     /// assert_eq!(d.is_null(), true);
     /// assert_eq!(d.to_string(), "");
     /// ```
+    #[inline(always)]
     pub fn concat(&'a self, other: &'a Twine<'a>) -> Twine<'a> {
         Twine::new_concat(self, other)
     }
@@ -240,6 +255,7 @@ impl<'a> Twine<'a> {
     /// assert_eq!(Twine::empty().is_nullary(), true);
     /// assert_eq!(Twine::from("foo").is_nullary(), false);
     /// ```
+    #[inline(always)]
     pub fn is_nullary(&self) -> bool {
         matches!(self.0, TwineKind::Empty | TwineKind::Null)
     }
@@ -254,6 +270,7 @@ impl<'a> Twine<'a> {
     /// assert_eq!(Twine::from("foo").is_unary(), true);
     /// assert_eq!(Twine::from(("foo", "bar")).is_unary(), false);
     /// ```
+    #[inline(always)]
     pub fn is_unary(&self) -> bool {
         matches!(self.0, TwineKind::Unary(_))
     }
@@ -268,6 +285,7 @@ impl<'a> Twine<'a> {
     /// assert_eq!(Twine::from("foo").is_binary(), false);
     /// assert_eq!(Twine::from(("foo", "bar")).is_binary(), true);
     /// ```
+    #[inline(always)]
     pub fn is_binary(&self) -> bool {
         matches!(self.0, TwineKind::Binary(_, _))
     }
@@ -282,6 +300,7 @@ impl<'a> Twine<'a> {
     /// assert_eq!(Twine::from("foo").is_null(), false);
     /// assert_eq!(Twine::from(("foo", "bar")).is_null(), false);
     /// ````
+    #[inline(always)]
     pub fn is_null(&self) -> bool {
         matches!(self.0, TwineKind::Null)
     }
@@ -297,6 +316,7 @@ impl<'a> Twine<'a> {
     /// assert_eq!(Twine::from("foo").is_single_str(), true);
     /// assert_eq!(Twine::from(("foo", "bar")).is_single_str(), false);
     /// ```
+    #[inline(always)]
     pub fn is_single_str(&self) -> bool {
         self.as_single_str().is_some()
     }
@@ -312,6 +332,7 @@ impl<'a> Twine<'a> {
     /// assert_eq!(Twine::from("foo").as_single_str(), Some("foo"));
     /// assert_eq!(Twine::from(("foo", "bar")).as_single_str(), None);
     /// ```
+    #[inline(always)]
     pub fn as_single_str(&self) -> Option<&'a str> {
         match self.0 {
             TwineKind::Empty => Some(""),
@@ -335,6 +356,7 @@ impl<'a> Twine<'a> {
     /// assert_eq!(Twine::from(("foo", "bar")).is_trivially_empty(), false);
     /// assert_eq!(Twine::from(("", "")).is_trivially_empty(), true);
     /// ```
+    #[inline(always)]
     pub fn is_trivially_empty(&self) -> bool {
         self.is_nullary()
     }
@@ -435,7 +457,8 @@ impl<'a> Twine<'a> {
     /// ```
     #[cfg(feature = "std")]
     pub fn to_string_preallocating(&self) -> std::string::String {
-        let mut s = std::string::String::with_capacity(self.estimated_capacity().next_power_of_two());
+        let mut s =
+            std::string::String::with_capacity(self.estimated_capacity().next_power_of_two());
         // dbg!(s.capacity());
         self.write_to(&mut s).expect("could not format into String");
         // dbg!(s.capacity());
@@ -452,6 +475,7 @@ impl<'a> core::fmt::Display for Twine<'a> {
 impl<'a> core::ops::Add<&'a Twine<'a>> for &'a Twine<'a> {
     type Output = Twine<'a>;
 
+    #[inline(always)]
     fn add(self, rhs: &'a Twine<'a>) -> Self::Output {
         Twine::new_concat(self, rhs)
     }

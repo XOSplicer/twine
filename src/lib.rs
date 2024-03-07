@@ -48,7 +48,7 @@ enum TwineChild<'a> {
     DecI32(&'a i32),
     DecI16(&'a i16),
     HexU64(&'a u64),
-    FmtArgs(&'a std::fmt::Arguments<'a>),
+    FmtArgs(&'a core::fmt::Arguments<'a>),
 }
 
 impl<'a> From<&'a str> for Twine<'a> {
@@ -109,8 +109,8 @@ impl<'a> From<&'a i16> for Twine<'a> {
     }
 }
 
-impl<'a> From<&'a std::fmt::Arguments<'a>> for Twine<'a> {
-    fn from(t: &'a std::fmt::Arguments<'a>) -> Twine<'a> {
+impl<'a> From<&'a core::fmt::Arguments<'a>> for Twine<'a> {
+    fn from(t: &'a core::fmt::Arguments<'a>) -> Twine<'a> {
         Twine(TwineKind::Unary(TwineChild::FmtArgs(t)))
     }
 }
@@ -338,8 +338,8 @@ impl<'a> Twine<'a> {
     /// ```
     pub fn is_empty(&self) -> bool {
         struct WriteCounter(usize);
-        impl std::fmt::Write for WriteCounter {
-            fn write_str(&mut self, s: &str) -> std::fmt::Result {
+        impl core::fmt::Write for WriteCounter {
+            fn write_str(&mut self, s: &str) -> core::fmt::Result {
                 self.0 += s.len();
                 Ok(())
             }
@@ -389,7 +389,7 @@ impl<'a> Twine<'a> {
     /// c.write_to(&mut s);
     /// assert_eq!(s, "123456");
     /// ```
-    pub fn write_to<W: std::fmt::Write>(&self, w: &mut W) -> std::fmt::Result {
+    pub fn write_to<W: core::fmt::Write>(&self, w: &mut W) -> core::fmt::Result {
         match self.0 {
             TwineKind::Null => {}
             TwineKind::Empty => {}
@@ -426,13 +426,13 @@ impl<'a> Twine<'a> {
     }
 }
 
-impl<'a> std::fmt::Display for Twine<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<'a> core::fmt::Display for Twine<'a> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         self.write_to(f)
     }
 }
 
-impl<'a> std::ops::Add<&'a Twine<'a>> for &'a Twine<'a> {
+impl<'a> core::ops::Add<&'a Twine<'a>> for &'a Twine<'a> {
     type Output = Twine<'a>;
 
     fn add(self, rhs: &'a Twine<'a>) -> Self::Output {
@@ -457,7 +457,7 @@ impl<'a> TwineChild<'a> {
         }
     }
 
-    fn write_to<W: std::fmt::Write>(&self, w: &mut W) -> std::fmt::Result {
+    fn write_to<W: core::fmt::Write>(&self, w: &mut W) -> core::fmt::Result {
         match self {
             TwineChild::Twine(t) => t.write_to(w),
             TwineChild::Str(string) => w.write_str(string),
@@ -480,9 +480,9 @@ mod test {
 
     #[test]
     fn size_of() {
-        let size_of_usize = std::mem::size_of::<usize>();
-        let size_of_twine = std::mem::size_of::<Twine<'static>>();
-        let size_of_str = std::mem::size_of::<&str>();
+        let size_of_usize = core::mem::size_of::<usize>();
+        let size_of_twine = core::mem::size_of::<Twine<'static>>();
+        let size_of_str = core::mem::size_of::<&str>();
         assert_eq!(size_of_twine, 6 * size_of_usize);
         assert_eq!(size_of_twine, 3 * &size_of_str);
     }

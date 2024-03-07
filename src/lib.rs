@@ -1,3 +1,8 @@
+#![no_std]
+
+#[cfg(feature = "std")]
+extern crate std;
+
 /// A lightweight data structure for efficiently representing the concatenation
 /// of temporary values as strings.
 ///
@@ -61,8 +66,9 @@ impl<'a> From<&'a str> for Twine<'a> {
     }
 }
 
-impl<'a> From<&'a String> for Twine<'a> {
-    fn from(t: &'a String) -> Twine<'a> {
+#[cfg(feature = "std")]
+impl<'a> From<&'a std::string::String> for Twine<'a> {
+    fn from(t: &'a std::string::String) -> Twine<'a> {
         Twine::from(t.as_str())
     }
 }
@@ -417,8 +423,9 @@ impl<'a> Twine<'a> {
     /// assert!(s.capacity() >= c.estimated_capacity());
     /// assert_eq!(s.capacity(), 8);
     /// ```
-    pub fn to_string_preallocating(&self) -> String {
-        let mut s = String::with_capacity(self.estimated_capacity().next_power_of_two());
+    #[cfg(feature = "std")]
+    pub fn to_string_preallocating(&self) -> std::string::String {
+        let mut s = std::string::String::with_capacity(self.estimated_capacity().next_power_of_two());
         // dbg!(s.capacity());
         self.write_to(&mut s).expect("could not format into String");
         // dbg!(s.capacity());
@@ -490,22 +497,15 @@ mod test {
     #[test]
     fn string_in_bumpalo() {
         let bump = bumpalo::Bump::new();
-        dbg!(bump.allocated_bytes());
         let base = bump.alloc_str("bumpalloc-");
-        dbg!(bump.allocated_bytes());
         let t = &*bump.alloc(Twine::from(&*base));
-        dbg!(bump.allocated_bytes());
         let t1 = t + &*bump.alloc(Twine::hex(&1));
-        dbg!(bump.allocated_bytes());
         let mut s1 = bumpalo::collections::String::with_capacity_in(
             t1.estimated_capacity().next_power_of_two(),
             &bump,
         );
-        dbg!(bump.allocated_bytes());
         let _ = t1.write_to(&mut s1);
-        dbg!(bump.allocated_bytes());
         assert_eq!(s1, "bumpalloc-1");
         assert!(s1.capacity() >= 11);
-        dbg!(bump.allocated_bytes());
     }
 }

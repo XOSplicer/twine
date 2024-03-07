@@ -35,6 +35,7 @@ enum TwineKind<'a> {
     Binary(TwineChild<'a>, TwineChild<'a>),
 }
 
+/// Inner representation of a non-empty Twine
 #[derive(Debug, Clone, Copy)]
 enum TwineChild<'a> {
     Twine(&'a Twine<'a>),
@@ -116,10 +117,15 @@ impl<'a> From<&'a std::fmt::Arguments<'a>> for Twine<'a> {
 
 impl<'a> From<(&'a str, &'a str)> for Twine<'a> {
     fn from((lhs, rhs): (&'a str, &'a str)) -> Twine<'a> {
-        Twine(TwineKind::Binary(
-            TwineChild::Str(lhs),
-            TwineChild::Str(rhs),
-        ))
+        match (lhs.is_empty(), rhs.is_empty()) {
+            (true, true) => Twine::empty(),
+            (true, false) => Twine::from(rhs),
+            (false, true) => Twine::from(lhs),
+            (false, false) => Twine(TwineKind::Binary(
+                TwineChild::Str(lhs),
+                TwineChild::Str(rhs),
+            )),
+        }
     }
 }
 
@@ -134,7 +140,8 @@ impl<'a> Twine<'a> {
     /// let a = &Twine::null();
     /// let b = &Twine::from("foo");
     /// let c = a.concat(b);
-    /// assert!(a.is_null());
+    /// assert!(c.is_null());
+    /// assert_eq!(c.to_string(), "");
     /// ```
     pub fn null() -> Twine<'a> {
         Twine(TwineKind::Null)
@@ -153,6 +160,13 @@ impl<'a> Twine<'a> {
     }
 
     /// Create a new Twine that is rendered as the hexadecimal value of the input.
+    ///
+    /// # Example
+    /// ```
+    /// # use twine::Twine;
+    /// let a = &Twine::hex(&0x42);
+    /// assert_eq!(a.to_string(), "42");
+    /// ```
     pub fn hex(t: &'a u64) -> Twine<'a> {
         Twine(TwineKind::Unary(TwineChild::HexU64(t)))
     }
@@ -182,36 +196,106 @@ impl<'a> Twine<'a> {
     }
 
     /// Create a new Twine by concatinating another Twine to this one.
+    ///
+    /// Concatinating a `null` value always returns a null value
+    ///
+    /// # Example
+    /// ```
+    /// # use twine::Twine;
+    /// let a = &Twine::from("1234");
+    /// let b = &Twine::from(&56u32);
+    /// let c = a.concat(b);
+    /// assert_eq!(c.to_string(), "123456");
+    /// let null = &Twine::null();
+    /// let d = a.concat(null);
+    /// assert_eq!(d.is_null(), true);
+    /// assert_eq!(d.to_string(), "");
+    /// ```
     pub fn concat(&'a self, other: &'a Twine<'a>) -> Twine<'a> {
         Twine::new_concat(self, other)
     }
 
     /// Checks if the Twine has 0 childs
+    ///
+    /// # Example
+    /// ```
+    /// # use twine::Twine;
+    /// assert_eq!(Twine::null().is_nullary(), true);
+    /// assert_eq!(Twine::empty().is_nullary(), true);
+    /// assert_eq!(Twine::from("foo").is_nullary(), false);
+    /// ```
     pub fn is_nullary(&self) -> bool {
         matches!(self.0, TwineKind::Empty | TwineKind::Null)
     }
 
     /// Checks if the Twine has 1 childs
+    ///
+    /// # Example
+    /// ```
+    /// # use twine::Twine;
+    /// assert_eq!(Twine::null().is_unary(), false);
+    /// assert_eq!(Twine::empty().is_unary(), false);
+    /// assert_eq!(Twine::from("foo").is_unary(), true);
+    /// assert_eq!(Twine::from(("foo", "bar")).is_unary(), false);
+    /// ```
     pub fn is_unary(&self) -> bool {
         matches!(self.0, TwineKind::Unary(_))
     }
 
     /// Checks if the Twine has 2 childs
+    ///
+    /// # Example
+    /// ```
+    /// # use twine::Twine;
+    /// assert_eq!(Twine::null().is_binary(), false);
+    /// assert_eq!(Twine::empty().is_binary(), false);
+    /// assert_eq!(Twine::from("foo").is_binary(), false);
+    /// assert_eq!(Twine::from(("foo", "bar")).is_binary(), true);
+    /// ```
     pub fn is_binary(&self) -> bool {
         matches!(self.0, TwineKind::Binary(_, _))
     }
 
     /// Checks if the Twine is a null value
+    ///
+    /// # Example
+    /// ```
+    /// # use twine::Twine;
+    /// assert_eq!(Twine::null().is_null(), true);
+    /// assert_eq!(Twine::empty().is_null(), false);
+    /// assert_eq!(Twine::from("foo").is_null(), false);
+    /// assert_eq!(Twine::from(("foo", "bar")).is_null(), false);
+    /// ````
     pub fn is_null(&self) -> bool {
         matches!(self.0, TwineKind::Null)
     }
 
     /// Checks if the Twine is a single, possibly empty, str
+    ///
+    /// # Example
+    /// ```
+    /// # use twine::Twine;
+    /// assert_eq!(Twine::null().is_single_str(), false);
+    /// assert_eq!(Twine::empty().is_single_str(), true);
+    /// assert_eq!(Twine::from("").is_single_str(), true);
+    /// assert_eq!(Twine::from("foo").is_single_str(), true);
+    /// assert_eq!(Twine::from(("foo", "bar")).is_single_str(), false);
+    /// ```
     pub fn is_single_str(&self) -> bool {
         self.as_single_str().is_some()
     }
 
-    /// Returns the Twine as a single str if it conly contains one str.
+    /// Returns the Twine as a single str if it only contains one str.
+    ///
+    /// # Example
+    /// ```
+    /// # use twine::Twine;
+    /// assert_eq!(Twine::null().as_single_str(), None);
+    /// assert_eq!(Twine::empty().as_single_str(), Some(""));
+    /// assert_eq!(Twine::from("").as_single_str(), Some(""));
+    /// assert_eq!(Twine::from("foo").as_single_str(), Some("foo"));
+    /// assert_eq!(Twine::from(("foo", "bar")).as_single_str(), None);
+    /// ```
     pub fn as_single_str(&self) -> Option<&'a str> {
         match self.0 {
             TwineKind::Empty => Some(""),
@@ -224,12 +308,34 @@ impl<'a> Twine<'a> {
     /// Even if false, the Twine still might render to an empty string.
     ///
     /// To check if the twine actually renders to an empty string use `is_empty()`
+    ///
+    /// # Example
+    /// ```
+    /// # use twine::Twine;
+    /// assert_eq!(Twine::null().is_trivially_empty(), true);
+    /// assert_eq!(Twine::empty().is_trivially_empty(), true);
+    /// assert_eq!(Twine::from("").is_trivially_empty(), true);
+    /// assert_eq!(Twine::from("foo").is_trivially_empty(), false);
+    /// assert_eq!(Twine::from(("foo", "bar")).is_trivially_empty(), false);
+    /// assert_eq!(Twine::from(("", "")).is_trivially_empty(), true);
+    /// ```
     pub fn is_trivially_empty(&self) -> bool {
         self.is_nullary()
     }
 
-    /// Ceck if the Twine actually renders to an empty string.
+    /// Check if the Twine actually renders to an empty string.
     /// This requires actually rendering parts of the twine and might need allocations.
+    ///
+    /// # Example
+    /// ```
+    /// # use twine::Twine;
+    /// assert_eq!(Twine::null().is_empty(), true);
+    /// assert_eq!(Twine::empty().is_empty(), true);
+    /// assert_eq!(Twine::from("").is_empty(), true);
+    /// assert_eq!(Twine::from("foo").is_empty(), false);
+    /// assert_eq!(Twine::from(("foo", "bar")).is_empty(), false);
+    /// assert_eq!(Twine::from(("", "")).is_empty(), true);
+    /// ```
     pub fn is_empty(&self) -> bool {
         struct WriteCounter(usize);
         impl std::fmt::Write for WriteCounter {
@@ -243,11 +349,23 @@ impl<'a> Twine<'a> {
         w.0 == 0
     }
 
-    /// The estimaed capacity needed to store the Twine.
+    /// The estimated capacity needed to store the Twine as a String.
     /// This method returns a vague lower bound needed.
     ///
     /// Use `next_power_of_two()` on the return value to enable efficient allocations
     /// and reduce re-allocations.
+    ///
+    /// # Example
+    /// ```
+    /// # use twine::Twine;
+    /// assert_eq!(Twine::null().estimated_capacity(), 0);
+    /// assert_eq!(Twine::empty().estimated_capacity(), 0);
+    /// assert_eq!(Twine::from("").estimated_capacity(), 0);
+    /// assert_eq!(Twine::from("foo").estimated_capacity(), 3);
+    /// assert_eq!(Twine::from(("foo", "bar")).estimated_capacity(), 6);
+    /// assert_eq!(Twine::from(("", "")).estimated_capacity(), 0);
+    /// assert!(Twine::from(&42u32).estimated_capacity() >= 1);
+    /// ```
     pub fn estimated_capacity(&self) -> usize {
         match self.0 {
             TwineKind::Null => 0,
@@ -260,6 +378,17 @@ impl<'a> Twine<'a> {
     }
 
     /// Render the Twine as a string in the buffer of the writer.
+    ///
+    /// # Example
+    /// ```
+    /// # use twine::Twine;
+    /// let a = &Twine::from("1234");
+    /// let b = &Twine::from(&56u32);
+    /// let c = a.concat(b);
+    /// let mut s = String::new();
+    /// c.write_to(&mut s);
+    /// assert_eq!(s, "123456");
+    /// ```
     pub fn write_to<W: std::fmt::Write>(&self, w: &mut W) -> std::fmt::Result {
         match self.0 {
             TwineKind::Null => {}
@@ -273,8 +402,22 @@ impl<'a> Twine<'a> {
         Ok(())
     }
 
-    /// Render the Twine as a String.
-    pub fn write_to_string(&self) -> String {
+    /// Converts the given Twine to a String
+    ///
+    /// Specialization of the `to_string()` method that pre-allocates an estimated capacity
+    ///
+    /// # Example
+    /// ```
+    /// # use twine::Twine;
+    /// let a = &Twine::from("1234");
+    /// let b = &Twine::from(&56u32);
+    /// let c = a.concat(b);
+    /// let s = c.to_string_preallocating();
+    /// assert_eq!(s, "123456");
+    /// assert!(s.capacity() >= c.estimated_capacity());
+    /// assert_eq!(s.capacity(), 8);
+    /// ```
+    pub fn to_string_preallocating(&self) -> String {
         let mut s = String::with_capacity(self.estimated_capacity().next_power_of_two());
         // dbg!(s.capacity());
         self.write_to(&mut s).expect("could not format into String");
@@ -328,5 +471,53 @@ impl<'a> TwineChild<'a> {
             TwineChild::HexU64(x) => write!(w, "{:x}", x),
             TwineChild::FmtArgs(f) => w.write_fmt(**f),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn main_test() {
+        println!("sizeof(Twine)={}", std::mem::size_of::<Twine<'static>>());
+        println!("sizeof(usize)={}", std::mem::size_of::<usize>());
+        println!("sizeof(&str)={}", std::mem::size_of::<&str>());
+        let bar = Twine::from("bar");
+        println!("{:?}", &bar);
+        let s = Twine::from(" ");
+        println!("{:?}", &s);
+        let foo = Twine::from("foo");
+        println!("{:?}", &foo);
+        let r = foo.concat(&s);
+        println!("{:?}", &r);
+        let t = r.concat(&bar);
+        println!("{:?}", &t);
+        let string = t.to_string();
+        println!("{:?}", &string);
+        let hex = &Twine::hex(&55);
+        let h = t.concat(hex);
+        println!("{:?}", h.to_string());
+        let h2 = h.concat(&h);
+        println!("{:?}", h2.to_string());
+
+        let bump = bumpalo::Bump::new();
+        dbg!(bump.allocated_bytes());
+        let base = bump.alloc_str("bumpalloc-");
+        dbg!(bump.allocated_bytes());
+        let t = &*bump.alloc(Twine::from(&*base));
+        dbg!(bump.allocated_bytes());
+        let t1 = t + &*bump.alloc(Twine::hex(&1));
+        dbg!(bump.allocated_bytes());
+        let mut s1 = bumpalo::collections::String::with_capacity_in(
+            t1.estimated_capacity().next_power_of_two(),
+            &bump,
+        );
+        dbg!(bump.allocated_bytes());
+        let _ = t1.write_to(&mut s1);
+        dbg!(bump.allocated_bytes());
+        println!("{:?}", &s1);
+        dbg!(s1.capacity());
+        dbg!(bump.allocated_bytes());
     }
 }

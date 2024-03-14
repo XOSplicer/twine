@@ -54,13 +54,16 @@ enum TwineChild<'a> {
     Twine(&'a Twine<'a>),
     Str(&'a str),
     Char(&'a char),
+    DecUsize(&'a usize),
     DecU64(&'a u64),
     DecU32(&'a u32),
     DecU16(&'a u16),
+    DecIsize(&'a isize),
     DecI64(&'a i64),
     DecI32(&'a i32),
     DecI16(&'a i16),
     HexU64(&'a u64),
+    HexUsize(&'a usize),
     FmtArgs(&'a core::fmt::Arguments<'a>),
 }
 
@@ -90,6 +93,13 @@ impl<'a> From<&'a char> for Twine<'a> {
     }
 }
 
+impl<'a> From<&'a usize> for Twine<'a> {
+    #[inline(always)]
+    fn from(t: &'a usize) -> Twine<'a> {
+        Twine(TwineKind::Unary(TwineChild::DecUsize(t)))
+    }
+}
+
 impl<'a> From<&'a u64> for Twine<'a> {
     #[inline(always)]
     fn from(t: &'a u64) -> Twine<'a> {
@@ -108,6 +118,13 @@ impl<'a> From<&'a u16> for Twine<'a> {
     #[inline(always)]
     fn from(t: &'a u16) -> Twine<'a> {
         Twine(TwineKind::Unary(TwineChild::DecU16(t)))
+    }
+}
+
+impl<'a> From<&'a isize> for Twine<'a> {
+    #[inline(always)]
+    fn from(t: &'a isize) -> Twine<'a> {
+        Twine(TwineKind::Unary(TwineChild::DecIsize(t)))
     }
 }
 
@@ -191,12 +208,25 @@ impl<'a> Twine<'a> {
     /// # Example
     /// ```
     /// # use twine::Twine;
-    /// let a = &Twine::hex(&0x42);
+    /// let a = &Twine::hex_u64(&0x42);
     /// assert_eq!(a.to_string(), "42");
     /// ```
     #[inline(always)]
-    pub fn hex(t: &'a u64) -> Twine<'a> {
+    pub fn hex_u64(t: &'a u64) -> Twine<'a> {
         Twine(TwineKind::Unary(TwineChild::HexU64(t)))
+    }
+
+    /// Create a new Twine that is rendered as the hexadecimal value of the input.
+    ///
+    /// # Example
+    /// ```
+    /// # use twine::Twine;
+    /// let a = &Twine::hex_usize(&0x42);
+    /// assert_eq!(a.to_string(), "42");
+    /// ```
+    #[inline(always)]
+    pub fn hex_usize(t: &'a usize) -> Twine<'a> {
+        Twine(TwineKind::Unary(TwineChild::HexUsize(t)))
     }
 
     /// Flatten a nested unary Twine
@@ -487,13 +517,16 @@ impl<'a> TwineChild<'a> {
             TwineChild::Twine(t) => t.estimated_capacity(),
             TwineChild::Str(string) => string.len(),
             TwineChild::Char(ch) => ch.len_utf8(),
+            TwineChild::DecUsize(_) => 1,
             TwineChild::DecU64(_) => 1,
             TwineChild::DecU32(_) => 1,
             TwineChild::DecU16(_) => 1,
+            TwineChild::DecIsize(_) => 1,
             TwineChild::DecI64(_) => 1,
             TwineChild::DecI32(_) => 1,
             TwineChild::DecI16(_) => 1,
             TwineChild::HexU64(_) => 1,
+            TwineChild::HexUsize(_) => 1,
             TwineChild::FmtArgs(a) => a.as_str().map(|s| s.len()).unwrap_or(1),
         }
     }
@@ -503,13 +536,16 @@ impl<'a> TwineChild<'a> {
             TwineChild::Twine(t) => t.write_to(w),
             TwineChild::Str(string) => w.write_str(string),
             TwineChild::Char(ch) => w.write_char(**ch),
+            TwineChild::DecUsize(x) => write!(w, "{}", x),
             TwineChild::DecU64(x) => write!(w, "{}", x),
             TwineChild::DecU32(x) => write!(w, "{}", x),
             TwineChild::DecU16(x) => write!(w, "{}", x),
+            TwineChild::DecIsize(x) => write!(w, "{}", x),
             TwineChild::DecI64(x) => write!(w, "{}", x),
             TwineChild::DecI32(x) => write!(w, "{}", x),
             TwineChild::DecI16(x) => write!(w, "{}", x),
             TwineChild::HexU64(x) => write!(w, "{:x}", x),
+            TwineChild::HexUsize(x) => write!(w, "{:x}", x),
             TwineChild::FmtArgs(f) => w.write_fmt(**f),
         }
     }
@@ -533,7 +569,7 @@ mod test {
         let bump = bumpalo::Bump::new();
         let base = bump.alloc_str("bumpalloc-");
         let t = &*bump.alloc(Twine::from(&*base));
-        let t1 = t + &*bump.alloc(Twine::hex(&1));
+        let t1 = t + &*bump.alloc(Twine::hex_u64(&1));
         let mut s1 = bumpalo::collections::String::with_capacity_in(
             t1.estimated_capacity().next_power_of_two(),
             &bump,

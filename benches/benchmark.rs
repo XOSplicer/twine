@@ -2,98 +2,154 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use twine::Twine;
 
 pub fn criterion_benchmark(c: &mut Criterion) {
-    c.bench_function("Twine: str concat short", |b| {
-        b.iter(|| {
-            let t1 = &Twine::from("foo");
-            let t2 = &Twine::from("bar");
+    let mut g_str_str_short = c.benchmark_group("short str concat");
+    let str_str_short = ("foo", "bar");
+    g_str_str_short.bench_with_input("Twine: concat ", &str_str_short, |bench, &(a, b)| {
+        bench.iter(|| {
+            let t1 = &Twine::from(a);
+            let t2 = &Twine::from(b);
             let r = t1 + t2;
             let _ = black_box(r);
         })
     });
-    c.bench_function("Twine: str concat short + to_string_preallocating", |b| {
-        b.iter(|| {
-            let t1 = &Twine::from("foo");
-            let t2 = &Twine::from("bar");
+    g_str_str_short.bench_with_input("Twine: concat + to_string_preallocating", &str_str_short, |bench, &(a, b)| {
+        bench.iter(|| {
+            let t1 = &Twine::from(a);
+            let t2 = &Twine::from(b);
             let a = t1 + t2;
             let r = a.to_string_preallocating();
             let _ = black_box(r);
         })
     });
-    c.bench_function("Twine: str concat short + to_string", |b| {
-        b.iter(|| {
-            let t1 = &Twine::from("foo");
-            let t2 = &Twine::from("bar");
+    g_str_str_short.bench_with_input("Twine: concat + to_string", &str_str_short, |bench, &(a, b)| {
+        bench.iter(|| {
+            let t1 = &Twine::from(a);
+            let t2 = &Twine::from(b);
             let a = t1 + t2;
             let r = a.to_string();
             let _ = black_box(r);
         })
     });
-    c.bench_function("String: str concat short", |b| {
-        b.iter(|| {
-            let r = String::from("foo") + "bar";
+    g_str_str_short.bench_with_input("String: concat", &str_str_short, |bench, &(a, b)| {
+        bench.iter(|| {
+            let r = String::from(a) + b;
             let _ = black_box(r);
         })
     });
-    c.bench_function("Twine: str concat long", |b| b.iter(|| {
-        let t1 = &Twine::from("1234567890123456789012345789012345678901234567890123457890123457890123456789012345678901234567890123456789012345678901234567890");
-        let t2 = &Twine::from("1234567890123456789012345789012345678901234567890123457890123457890123456789012345678901234567890123456789012345678901234567890");
-        let r = t1 + t2;
-        let _ = black_box(r);
-    }));
-    c.bench_function("Twine: str concat long + to_string_preallocating", |b| b.iter(|| {
-        let t1 = &Twine::from("1234567890123456789012345789012345678901234567890123457890123457890123456789012345678901234567890123456789012345678901234567890");
-        let t2 = &Twine::from("1234567890123456789012345789012345678901234567890123457890123457890123456789012345678901234567890123456789012345678901234567890");
-        let a = t1 + t2;
-        let r = a.to_string_preallocating();
-        let _ = black_box(r);
-    }));
-    c.bench_function("Twine: str concat long + to_string", |b| b.iter(|| {
-        let t1 = &Twine::from("1234567890123456789012345789012345678901234567890123457890123457890123456789012345678901234567890123456789012345678901234567890");
-        let t2 = &Twine::from("1234567890123456789012345789012345678901234567890123457890123457890123456789012345678901234567890123456789012345678901234567890");
-        let a = t1 + t2;
-        let r = a.to_string();
-        let _ = black_box(r);
-    }));
-    c.bench_function("String: str concat long", |b| b.iter(|| {
-        let s1 = String::from("1234567890123456789012345789012345678901234567890123457890123457890123456789012345678901234567890123456789012345678901234567890");
-        let s2 = "1234567890123456789012345789012345678901234567890123457890123457890123456789012345678901234567890123456789012345678901234567890";
-        let r = s1 + &s2;
-        let _ = black_box(r);
-    }));
-    c.bench_function("Twine: str concat u32", |b| {
-        b.iter(|| {
-            let t1 = &Twine::from("identifier-");
-            let t2 = &Twine::from(&4321u32);
+    g_str_str_short.bench_with_input("format_args: concat", &str_str_short, |bench, &(a, b)| {
+        bench.iter(|| {
+            let _ = black_box(format_args!("{}{}", a, b));
+        })
+    });
+    g_str_str_short.bench_with_input("format_args: concat + to_string", &str_str_short, |bench, &(a, b)| {
+        bench.iter(|| {
+            let r = format_args!("{}{}", a, b).to_string();
+            let _ = black_box(r);
+        })
+    });
+    g_str_str_short.finish();
+
+    let mut g_str_str_long = c.benchmark_group("long str concat");
+    let str_str_long = (
+        "1234567890123456789012345789012345678901234567890123457890123457890123456789012345678901234567890123456789012345678901234567890",
+        "1234567890123456789012345789012345678901234567890123457890123457890123456789012345678901234567890123456789012345678901234567890",
+    );
+    g_str_str_long.bench_with_input("Twine: concat ", &str_str_long, |bench, &(a, b)| {
+        bench.iter(|| {
+            let t1 = &Twine::from(a);
+            let t2 = &Twine::from(b);
             let r = t1 + t2;
             let _ = black_box(r);
         })
     });
-    c.bench_function("Twine: str concat u32 + to_string", |b| {
-        b.iter(|| {
-            let t1 = &Twine::from("identifier-");
-            let t2 = &Twine::from(&4321u32);
-            let a = t1 + t2;
-            let r = a.to_string();
-            let _ = black_box(r);
-        })
-    });
-    c.bench_function("Twine: str concat u32 + to_string_preallocating", |b| {
-        b.iter(|| {
-            let t1 = &Twine::from("identifier-");
-            let t2 = &Twine::from(&4321u32);
+    g_str_str_long.bench_with_input("Twine: concat + to_string_preallocating", &str_str_long, |bench, &(a, b)| {
+        bench.iter(|| {
+            let t1 = &Twine::from(a);
+            let t2 = &Twine::from(b);
             let a = t1 + t2;
             let r = a.to_string_preallocating();
             let _ = black_box(r);
         })
     });
-    c.bench_function("String: format str concat u32", |b| {
-        b.iter(|| {
-            let s1 = String::from("identifier-");
-            let u = 4321u32;
-            let r = format!("{}{}", &s1, &u);
+    g_str_str_long.bench_with_input("Twine: concat + to_string", &str_str_long, |bench, &(a, b)| {
+        bench.iter(|| {
+            let t1 = &Twine::from(a);
+            let t2 = &Twine::from(b);
+            let a = t1 + t2;
+            let r = a.to_string();
             let _ = black_box(r);
         })
     });
+    g_str_str_long.bench_with_input("String: concat", &str_str_long, |bench, &(a, b)| {
+        bench.iter(|| {
+            let r = String::from(a) + b;
+            let _ = black_box(r);
+        })
+    });
+    g_str_str_long.bench_with_input("format_args: concat", &str_str_long, |bench, &(a, b)| {
+        bench.iter(|| {
+            let _ = black_box(format_args!("{}{}", a, b));
+        })
+    });
+    g_str_str_long.bench_with_input("format_args: concat + to_string", &str_str_long, |bench, &(a, b)| {
+        bench.iter(|| {
+            let r = format_args!("{}{}", a, b).to_string();
+            let _ = black_box(r);
+        })
+    });
+    g_str_str_long.finish();
+
+
+    let mut g_str_u32 = c.benchmark_group("str concat u32");
+    let str_u32= (
+        "identifier-",
+        &4321u32,
+    );
+    g_str_u32.bench_with_input("Twine: concat ", &str_u32, |bench, &(a, b)| {
+        bench.iter(|| {
+            let t1 = &Twine::from(a);
+            let t2 = &Twine::from(b);
+            let r = t1 + t2;
+            let _ = black_box(r);
+        })
+    });
+    g_str_u32.bench_with_input("Twine: concat + to_string_preallocating", &str_u32, |bench, &(a, b)| {
+        bench.iter(|| {
+            let t1 = &Twine::from(a);
+            let t2 = &Twine::from(b);
+            let a = t1 + t2;
+            let r = a.to_string_preallocating();
+            let _ = black_box(r);
+        })
+    });
+    g_str_u32.bench_with_input("Twine: concat + to_string", &str_u32, |bench, &(a, b)| {
+        bench.iter(|| {
+            let t1 = &Twine::from(a);
+            let t2 = &Twine::from(b);
+            let a = t1 + t2;
+            let r = a.to_string();
+            let _ = black_box(r);
+        })
+    });
+    g_str_u32.bench_with_input("String: format", &str_u32, |bench, &(a, b)| {
+        bench.iter(|| {
+            let r = format!("{}{}", a, b);
+            let _ = black_box(r);
+        })
+    });
+    g_str_u32.bench_with_input("format_args: concat", &str_u32, |bench, &(a, b)| {
+        bench.iter(|| {
+            let _ = black_box(format_args!("{}{}", a, b));
+        })
+    });
+    g_str_u32.bench_with_input("format_args: concat + to_string", &str_u32, |bench, &(a, b)| {
+        bench.iter(|| {
+            let r = format_args!("{}{}", a, b).to_string();
+            let _ = black_box(r);
+        })
+    });
+    g_str_u32.finish();
+
 }
 
 criterion_group!(benches, criterion_benchmark);

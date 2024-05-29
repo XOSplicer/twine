@@ -7,7 +7,7 @@
 //!
 //! Use `Twine::concat` to concatinate multiple Twines.
 //!
-//! Similar to LLVM's llvm::Twine.
+//! Similar to LLVM's `llvm::Twine`.
 //!
 //! A Twine is a lightweight string structure.
 //! It represents a concatenated string using a binary-tree.
@@ -26,7 +26,6 @@
 //!
 
 #![no_std]
-
 #![deny(unsafe_code)]
 
 #[cfg(feature = "std")]
@@ -186,6 +185,7 @@ impl<'a> Twine<'a> {
     /// assert_eq!(c.to_string(), "");
     /// ```
     #[inline(always)]
+    #[must_use]
     pub fn null() -> Twine<'a> {
         Twine(TwineKind::Null)
     }
@@ -199,6 +199,7 @@ impl<'a> Twine<'a> {
     /// assert_eq!(a.to_string(), "");
     /// ```
     #[inline(always)]
+    #[must_use]
     pub fn empty() -> Twine<'a> {
         Twine(TwineKind::Empty)
     }
@@ -212,6 +213,7 @@ impl<'a> Twine<'a> {
     /// assert_eq!(a.to_string(), "42");
     /// ```
     #[inline(always)]
+    #[must_use]
     pub fn hex_u64(t: &'a u64) -> Twine<'a> {
         Twine(TwineKind::Unary(TwineChild::HexU64(t)))
     }
@@ -225,6 +227,7 @@ impl<'a> Twine<'a> {
     /// assert_eq!(a.to_string(), "42");
     /// ```
     #[inline(always)]
+    #[must_use]
     pub fn hex_usize(t: &'a usize) -> Twine<'a> {
         Twine(TwineKind::Unary(TwineChild::HexUsize(t)))
     }
@@ -241,6 +244,7 @@ impl<'a> Twine<'a> {
 
     /// Create a new Twine by concatinating two Twines.
     #[inline(always)]
+    #[must_use]
     pub fn new_concat(lhs: &'a Twine<'a>, rhs: &'a Twine<'a>) -> Twine<'a> {
         match (lhs.flatten().0, rhs.flatten().0) {
             (TwineKind::Null, _) => Twine(TwineKind::Null),
@@ -272,6 +276,7 @@ impl<'a> Twine<'a> {
     /// assert_eq!(d.to_string(), "");
     /// ```
     #[inline(always)]
+    #[must_use]
     pub fn concat(&'a self, other: &'a Twine<'a>) -> Twine<'a> {
         Twine::new_concat(self, other)
     }
@@ -286,6 +291,7 @@ impl<'a> Twine<'a> {
     /// assert_eq!(Twine::from("foo").is_nullary(), false);
     /// ```
     #[inline(always)]
+    #[must_use]
     pub fn is_nullary(&self) -> bool {
         matches!(self.0, TwineKind::Empty | TwineKind::Null)
     }
@@ -301,6 +307,7 @@ impl<'a> Twine<'a> {
     /// assert_eq!(Twine::from(("foo", "bar")).is_unary(), false);
     /// ```
     #[inline(always)]
+    #[must_use]
     pub fn is_unary(&self) -> bool {
         matches!(self.0, TwineKind::Unary(_))
     }
@@ -316,6 +323,7 @@ impl<'a> Twine<'a> {
     /// assert_eq!(Twine::from(("foo", "bar")).is_binary(), true);
     /// ```
     #[inline(always)]
+    #[must_use]
     pub fn is_binary(&self) -> bool {
         matches!(self.0, TwineKind::Binary(_, _))
     }
@@ -331,6 +339,7 @@ impl<'a> Twine<'a> {
     /// assert_eq!(Twine::from(("foo", "bar")).is_null(), false);
     /// ````
     #[inline(always)]
+    #[must_use]
     pub fn is_null(&self) -> bool {
         matches!(self.0, TwineKind::Null)
     }
@@ -347,6 +356,7 @@ impl<'a> Twine<'a> {
     /// assert_eq!(Twine::from(("foo", "bar")).is_single_str(), false);
     /// ```
     #[inline(always)]
+    #[must_use]
     pub fn is_single_str(&self) -> bool {
         self.as_single_str().is_some()
     }
@@ -363,6 +373,7 @@ impl<'a> Twine<'a> {
     /// assert_eq!(Twine::from(("foo", "bar")).as_single_str(), None);
     /// ```
     #[inline(always)]
+    #[must_use]
     pub fn as_single_str(&self) -> Option<&'a str> {
         match self.0 {
             TwineKind::Empty => Some(""),
@@ -387,6 +398,7 @@ impl<'a> Twine<'a> {
     /// assert_eq!(Twine::from(("", "")).is_trivially_empty(), true);
     /// ```
     #[inline(always)]
+    #[must_use]
     pub fn is_trivially_empty(&self) -> bool {
         self.is_nullary()
     }
@@ -404,6 +416,7 @@ impl<'a> Twine<'a> {
     /// assert_eq!(Twine::from(("foo", "bar")).is_empty(), false);
     /// assert_eq!(Twine::from(("", "")).is_empty(), true);
     /// ```
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         struct WriteCounter(usize);
         impl core::fmt::Write for WriteCounter {
@@ -434,6 +447,7 @@ impl<'a> Twine<'a> {
     /// assert_eq!(Twine::from(("", "")).estimated_capacity(), 0);
     /// assert!(Twine::from(&42u32).estimated_capacity() >= 1);
     /// ```
+    #[must_use]
     pub fn estimated_capacity(&self) -> usize {
         match self.0 {
             TwineKind::Null => 0,
@@ -486,6 +500,7 @@ impl<'a> Twine<'a> {
     /// assert_eq!(s.capacity(), 8);
     /// ```
     #[cfg(feature = "std")]
+    #[must_use]
     pub fn to_string_preallocating(&self) -> std::string::String {
         let mut s =
             std::string::String::with_capacity(self.estimated_capacity().next_power_of_two());
@@ -527,7 +542,7 @@ impl<'a> TwineChild<'a> {
             TwineChild::DecI16(_) => 1,
             TwineChild::HexU64(_) => 1,
             TwineChild::HexUsize(_) => 1,
-            TwineChild::FmtArgs(a) => a.as_str().map(|s| s.len()).unwrap_or(1),
+            TwineChild::FmtArgs(a) => a.as_str().map_or(1, str::len),
         }
     }
 
@@ -536,16 +551,16 @@ impl<'a> TwineChild<'a> {
             TwineChild::Twine(t) => t.write_to(w),
             TwineChild::Str(string) => w.write_str(string),
             TwineChild::Char(ch) => w.write_char(**ch),
-            TwineChild::DecUsize(x) => write!(w, "{}", x),
-            TwineChild::DecU64(x) => write!(w, "{}", x),
-            TwineChild::DecU32(x) => write!(w, "{}", x),
-            TwineChild::DecU16(x) => write!(w, "{}", x),
-            TwineChild::DecIsize(x) => write!(w, "{}", x),
-            TwineChild::DecI64(x) => write!(w, "{}", x),
-            TwineChild::DecI32(x) => write!(w, "{}", x),
-            TwineChild::DecI16(x) => write!(w, "{}", x),
-            TwineChild::HexU64(x) => write!(w, "{:x}", x),
-            TwineChild::HexUsize(x) => write!(w, "{:x}", x),
+            TwineChild::DecUsize(x) => write!(w, "{x}"),
+            TwineChild::DecU64(x) => write!(w, "{x}"),
+            TwineChild::DecU32(x) => write!(w, "{x}"),
+            TwineChild::DecU16(x) => write!(w, "{x}"),
+            TwineChild::DecIsize(x) => write!(w, "{x}"),
+            TwineChild::DecI64(x) => write!(w, "{x}"),
+            TwineChild::DecI32(x) => write!(w, "{x}"),
+            TwineChild::DecI16(x) => write!(w, "{x}"),
+            TwineChild::HexU64(x) => write!(w, "{x:x}"),
+            TwineChild::HexUsize(x) => write!(w, "{x:x}"),
             TwineChild::FmtArgs(f) => w.write_fmt(**f),
         }
     }

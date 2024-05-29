@@ -10,7 +10,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
             let t2 = &Twine::from(b);
             let r = t1 + t2;
             let _ = black_box(r);
-        })
+        });
     });
     g_str_str_short.bench_with_input(
         "Twine: concat + to_string_preallocating",
@@ -22,7 +22,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
                 let a = t1 + t2;
                 let r = a.to_string_preallocating();
                 let _ = black_box(r);
-            })
+            });
         },
     );
     g_str_str_short.bench_with_input(
@@ -35,28 +35,28 @@ pub fn criterion_benchmark(c: &mut Criterion) {
                 let a = t1 + t2;
                 let r = a.to_string();
                 let _ = black_box(r);
-            })
+            });
         },
     );
     g_str_str_short.bench_with_input("String: concat", &str_str_short, |bench, &(a, b)| {
         bench.iter(|| {
             let r = String::from(a) + b;
             let _ = black_box(r);
-        })
+        });
     });
     g_str_str_short.bench_with_input("format_args: concat", &str_str_short, |bench, &(a, b)| {
         bench.iter(|| {
-            let _ = black_box(format_args!("{}{}", a, b));
-        })
+            let _ = black_box(format_args!("{a}{b}"));
+        });
     });
     g_str_str_short.bench_with_input(
         "format_args: concat + to_string",
         &str_str_short,
         |bench, &(a, b)| {
             bench.iter(|| {
-                let r = format_args!("{}{}", a, b).to_string();
+                let r = format_args!("{a}{b}").to_string();
                 let _ = black_box(r);
-            })
+            });
         },
     );
     g_str_str_short.finish();
@@ -72,7 +72,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
             let t2 = &Twine::from(b);
             let r = t1 + t2;
             let _ = black_box(r);
-        })
+        });
     });
     g_str_str_long.bench_with_input(
         "Twine: concat + to_string_preallocating",
@@ -84,7 +84,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
                 let a = t1 + t2;
                 let r = a.to_string_preallocating();
                 let _ = black_box(r);
-            })
+            });
         },
     );
     g_str_str_long.bench_with_input(
@@ -97,28 +97,28 @@ pub fn criterion_benchmark(c: &mut Criterion) {
                 let a = t1 + t2;
                 let r = a.to_string();
                 let _ = black_box(r);
-            })
+            });
         },
     );
     g_str_str_long.bench_with_input("String: concat", &str_str_long, |bench, &(a, b)| {
         bench.iter(|| {
             let r = String::from(a) + b;
             let _ = black_box(r);
-        })
+        });
     });
     g_str_str_long.bench_with_input("format_args: concat", &str_str_long, |bench, &(a, b)| {
         bench.iter(|| {
-            let _ = black_box(format_args!("{}{}", a, b));
-        })
+            let _ = black_box(format_args!("{a}{b}"));
+        });
     });
     g_str_str_long.bench_with_input(
         "format_args: concat + to_string",
         &str_str_long,
         |bench, &(a, b)| {
             bench.iter(|| {
-                let r = format_args!("{}{}", a, b).to_string();
+                let r = format_args!("{a}{b}").to_string();
                 let _ = black_box(r);
-            })
+            });
         },
     );
     g_str_str_long.finish();
@@ -131,7 +131,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
             let t2 = &Twine::from(b);
             let r = t1 + t2;
             let _ = black_box(r);
-        })
+        });
     });
     g_str_u32.bench_with_input(
         "Twine: concat + to_string_preallocating",
@@ -143,7 +143,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
                 let a = t1 + t2;
                 let r = a.to_string_preallocating();
                 let _ = black_box(r);
-            })
+            });
         },
     );
     g_str_u32.bench_with_input("Twine: concat + to_string", &str_u32, |bench, &(a, b)| {
@@ -153,27 +153,27 @@ pub fn criterion_benchmark(c: &mut Criterion) {
             let a = t1 + t2;
             let r = a.to_string();
             let _ = black_box(r);
-        })
+        });
     });
     g_str_u32.bench_with_input("String: format", &str_u32, |bench, &(a, b)| {
         bench.iter(|| {
-            let r = format!("{}{}", a, b);
+            let r = format!("{a}{b}");
             let _ = black_box(r);
-        })
+        });
     });
     g_str_u32.bench_with_input("format_args: concat", &str_u32, |bench, &(a, b)| {
         bench.iter(|| {
-            let _ = black_box(format_args!("{}{}", a, b));
-        })
+            let _ = black_box(format_args!("{a}{b}"));
+        });
     });
     g_str_u32.bench_with_input(
         "format_args: concat + to_string",
         &str_u32,
         |bench, &(a, b)| {
             bench.iter(|| {
-                let r = format_args!("{}{}", a, b).to_string();
+                let r = format_args!("{a}{b}").to_string();
                 let _ = black_box(r);
-            })
+            });
         },
     );
     g_str_u32.finish();

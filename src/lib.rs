@@ -27,6 +27,7 @@
 
 #![no_std]
 #![deny(unsafe_code)]
+#![allow(clippy::inline_always)]
 
 #[cfg(feature = "std")]
 extern crate std;
@@ -247,8 +248,7 @@ impl<'a> Twine<'a> {
     #[must_use]
     pub fn new_concat(lhs: &'a Twine<'a>, rhs: &'a Twine<'a>) -> Twine<'a> {
         match (lhs.flatten().0, rhs.flatten().0) {
-            (TwineKind::Null, _) => Twine(TwineKind::Null),
-            (_, TwineKind::Null) => Twine(TwineKind::Null),
+            (TwineKind::Null, _) | (_, TwineKind::Null) => Twine(TwineKind::Null),
             (TwineKind::Empty, _) => *rhs,
             (_, TwineKind::Empty) => *lhs,
             (TwineKind::Unary(l), TwineKind::Unary(r)) => Twine(TwineKind::Binary(l, r)),
@@ -450,8 +450,7 @@ impl<'a> Twine<'a> {
     #[must_use]
     pub fn estimated_capacity(&self) -> usize {
         match self.0 {
-            TwineKind::Null => 0,
-            TwineKind::Empty => 0,
+            TwineKind::Null | TwineKind::Empty => 0,
             TwineKind::Unary(child) => child.estimated_capacity(),
             TwineKind::Binary(l_child, r_child) => {
                 l_child.estimated_capacity() + r_child.estimated_capacity()
@@ -460,6 +459,10 @@ impl<'a> Twine<'a> {
     }
 
     /// Render the Twine as a string in the buffer of the writer.
+    ///
+    /// # Errors
+    ///
+    /// This method returns an `fmt::Error` Error Result if writing to `w` fails.
     ///
     /// # Example
     /// ```
@@ -473,8 +476,7 @@ impl<'a> Twine<'a> {
     /// ```
     pub fn write_to<W: core::fmt::Write>(&self, w: &mut W) -> core::fmt::Result {
         match self.0 {
-            TwineKind::Null => {}
-            TwineKind::Empty => {}
+            TwineKind::Null | TwineKind::Empty => {}
             TwineKind::Unary(child) => child.write_to(w)?,
             TwineKind::Binary(l_child, r_child) => {
                 l_child.write_to(w)?;
@@ -487,6 +489,10 @@ impl<'a> Twine<'a> {
     /// Converts the given Twine to a String
     ///
     /// Specialization of the `to_string()` method that pre-allocates an estimated capacity
+    ///
+    /// # Panics
+    ///
+    /// This method panics if it fails to write to the String it allocates.
     ///
     /// # Example
     /// ```
@@ -532,16 +538,19 @@ impl<'a> TwineChild<'a> {
             TwineChild::Twine(t) => t.estimated_capacity(),
             TwineChild::Str(string) => string.len(),
             TwineChild::Char(ch) => ch.len_utf8(),
-            TwineChild::DecUsize(_) => 1,
-            TwineChild::DecU64(_) => 1,
-            TwineChild::DecU32(_) => 1,
-            TwineChild::DecU16(_) => 1,
-            TwineChild::DecIsize(_) => 1,
-            TwineChild::DecI64(_) => 1,
-            TwineChild::DecI32(_) => 1,
-            TwineChild::DecI16(_) => 1,
-            TwineChild::HexU64(_) => 1,
-            TwineChild::HexUsize(_) => 1,
+            TwineChild::DecUsize(_)
+            | TwineChild::DecU64(_)
+            | TwineChild::DecU32(_)
+            | TwineChild::DecU16(_)
+            | TwineChild::DecIsize(_)
+            | TwineChild::DecI64(_)
+            | TwineChild::DecI32(_)
+            | TwineChild::DecI16(_)
+            | TwineChild::HexU64(_)
+            | TwineChild::HexUsize(_) => 2,
+            // NOTE: all fields of fmt::Arguments are private
+            // and all methods are marked as fmt_internal
+            // so we can not actually access any better information
             TwineChild::FmtArgs(a) => a.as_str().map_or(1, str::len),
         }
     }

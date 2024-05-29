@@ -562,6 +562,8 @@ mod test {
         let size_of_str = core::mem::size_of::<&str>();
         assert_eq!(size_of_twine, 6 * size_of_usize);
         assert_eq!(size_of_twine, 3 * &size_of_str);
+        let size_of_child = core::mem::size_of::<TwineChild<'static>>();
+        assert_eq!(size_of_child, 3 * size_of_usize);
     }
 
     #[test]
